@@ -1,6 +1,6 @@
 # SETUP ####
 
-# cutadapt must be installed and in your $PATH
+# cutadapt, itsxpress, and vsearch must be installed and in your $PATH
 
 ## Packages ####
 library(readxl)
@@ -11,6 +11,8 @@ library(Biostrings)
 library(ShortRead) 
 library(parallel)
 sessionInfo()
+
+threads = max(1, parallel::detectCores()-1)
 
 ## Functions ####
 
@@ -121,9 +123,9 @@ if (nrow(missing_inputs) > 0) {
 
 
 ## Primer sequences ####
-bact_F <- "GTGYCAGCMGCCGCGGTAA"   # 515F-Y
+bact_F <- "GTGYCAGCMGCCGCGGTAA"   # 515F-B
 bact_R <- "GGACTACNVGGGTWTCTAAT"  # 806R-B
-fung_F <- "GCATCGATGAAGAACGCAGC"  # ITS3
+fung_F <- "GTGAATCATCGAATCTTTGAA"  # ITS86
 fung_R <- "TCCTCCGCTTATTGATATGC"  # ITS4
 
 
@@ -160,3 +162,92 @@ run_domain(
   lead_slack_5p = 3,
   lastN_3p = 10
 )
+
+# EXTRACT ITS2 REGION FROM FUNGAL READS ####
+
+# skipping reverse reads due to low quality
+
+# pick path vars for ease
+fung_in <- meta$fp_cutadapt_fwd_fung
+fung_out <- meta$fp_itsx_fwd_fung
+
+
+# set itsxpress system path
+itsxpress_path <- "itsxpress"
+
+###### may need to update if itsxpress not in your $PATH
+# example:
+# itsxpress_path <- "/home/gzahn/.local/bin/itsxpress"
+######
+
+# run for-loop, printing commands to file and keeping log files
+for(i in seq_along(fung_in)){
+  itsxpress <- paste0(itsxpress_path,
+                      " --fastq ",fung_in[i],
+                      " --outfile ",fung_out[i],
+                      " --region ITS2",
+                      " --taxa Fungi",
+                      " --threads ",threads,
+                      " --log ",fung_out[i],".log",
+                      " --single_end")
+  # write commands to file
+  sink("./output/itsxpress_commands.sh",append = TRUE)
+  cat(itsxpress,"\n")
+  sink(NULL)
+  
+  system(command = itsxpress)
+}
+
+
+# FILTER AND TRIM FOR DADA2 ####
+
+# Assign filepaths for bact and fung
+bact_in_f <- meta$fp_cutadapt_fwd_bact
+bact_in_r <- meta$fp_cutadapt_rev_bact
+bact_out_f <- meta$fp_clean_fwd_bact
+bact_out_r <- meta$fp_clean_rev_bact
+
+fung_in <- meta$fp_itsx_fwd_fung
+fung_out <- meta$fp_clean_fwd_fung
+
+
+bact_ft_out <- filterAndTrim(bact_in_f, bact_out_f, bact_in_r, bact_out_r, # input and output file names as denoted above
+                          maxN = 0, # uncalled bases are currently not supported in dada2
+                          maxEE=c(3,3), # refers to the maximum expected errors allowed
+                          truncQ=2, # special value denoting "end of good quality sequence" (optional)
+                          rm.phix=TRUE, # automatically remove PhiX spike-in reads from sequencing center
+                          compress=TRUE, # compress output files with gzip
+                          multithread=threads) # On Windows set multithread=FALSE
+
+
+fung_ft_out <- filterAndTrim(fung_in, fung_out, # input and output file names as denoted above
+                          maxN=0, # uncalled bases are currently not supported in dada2
+                          maxEE=3, # refers to the maximum expected errors allowed
+                          truncQ=2, # special value denoting "end of good quality sequence" (optional)
+                          rm.phix=TRUE, # automatically remove PhiX spike-in reads from sequencing center
+                          compress=TRUE, # compress output files with gzip
+                          multithread=threads) # On Windows set multithread=FALSE
+
+# some samples may have no reads pass the filter. Be aware.
+
+saveRDS(bact_ft_out,"./output/bact_filt_out.RDS")
+saveRDS(fung_ft_out,"./output/fung_filt_out.RDS")
+
+# quickly inspect filtration outcomes
+bact_ft_out; fung_ft_out
+
+fung_ft_out %>% 
+  as.data.frame() %>% 
+  mutate(domain="Fungi") %>% 
+  full_join(
+    bact_ft_out %>% 
+      as.data.frame() %>% 
+      mutate(domain="Bacteria")
+  ) %>% 
+  pivot_longer(-domain,names_prefix = "reads.") %>% 
+    ggplot(aes(y=value,color=name)) +
+  geom_density(linewidth=2) +
+  facet_wrap(~domain) +
+  theme_bw() +
+  labs(y="Read counts")
+
