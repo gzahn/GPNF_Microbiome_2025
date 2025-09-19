@@ -13,8 +13,9 @@ library(Biostrings)
 library(ShortRead) 
 library(parallel)
 sessionInfo()
+set.seed(666)
 
-threads = max(1, parallel::detectCores()-1)
+nthreads <- max(1, parallel::detectCores()-1)
 
 ## Functions ####
 
@@ -52,7 +53,7 @@ run_cutadapt <- function(R1_in, R2_in, R1_out, R2_out, FWD, REV,
                          lead_slack_5p_R2 = NULL,        # override if needed
                          lastN_3p = 10,
                          err = 0.07, min_overlap = 15, min_len = 50,
-                         threads = max(1, parallel::detectCores()-1)) {
+                         threads = max(1, nthreads)) {
   
   slack_R1 <- if (is.null(lead_slack_5p_R1)) lead_slack_5p else lead_slack_5p_R1
   slack_R2 <- if (is.null(lead_slack_5p_R2)) lead_slack_5p else lead_slack_5p_R2
@@ -67,7 +68,7 @@ run_cutadapt <- function(R1_in, R2_in, R1_out, R2_out, FWD, REV,
   invisible(lapply(dirs, function(d) if (!dir.exists(d)) dir.create(d, recursive = TRUE)))
   
   args <- c(
-    "-j", as.character(threads),
+    "-j", as.character(nthreads),
     "--match-read-wildcards",
     "--error-rate", as.character(err),
     "--overlap", as.character(min_overlap),
@@ -105,7 +106,7 @@ run_domain <- function(df, r1_in, r2_in, r1_out, r2_out, FWD, REV,
 
 
 
-## LOAD DATA ####
+## Load Data ####
 meta <- read_xlsx("./data/metadata/clean_metadata.xlsx")
 
 # check for missing or misnamed files
@@ -175,12 +176,12 @@ fung_out <- meta$fp_itsx_fwd_fung
 
 
 # set itsxpress system path
-itsxpress_path <- "itsxpress"
-
 ###### may need to update if itsxpress not in your $PATH
 # example:
 # itsxpress_path <- "/home/gzahn/.local/bin/itsxpress"
-######
+itsxpress_path <- "itsxpress"
+
+
 
 # run for-loop, printing commands to file and keeping log files
 for(i in seq_along(fung_in)){
@@ -189,7 +190,7 @@ for(i in seq_along(fung_in)){
                       " --outfile ",fung_out[i],
                       " --region ITS2",
                       " --taxa Fungi",
-                      " --threads ",threads,
+                      " --threads ",nthreads,
                       " --log ",fung_out[i],".log",
                       " --single_end")
   # write commands to file
@@ -219,7 +220,7 @@ bact_ft_out <- filterAndTrim(bact_in_f, bact_out_f, bact_in_r, bact_out_r, # inp
                           truncQ=2, # special value denoting "end of good quality sequence" (optional)
                           rm.phix=TRUE, # automatically remove PhiX spike-in reads from sequencing center
                           compress=TRUE, # compress output files with gzip
-                          multithread=threads) # On Windows set multithread=FALSE
+                          multithread=nthreads) # On Windows set multithread=FALSE
 
 
 fung_ft_out <- filterAndTrim(fung_in, fung_out, # input and output file names as denoted above
@@ -228,15 +229,23 @@ fung_ft_out <- filterAndTrim(fung_in, fung_out, # input and output file names as
                           truncQ=2, # special value denoting "end of good quality sequence" (optional)
                           rm.phix=TRUE, # automatically remove PhiX spike-in reads from sequencing center
                           compress=TRUE, # compress output files with gzip
-                          multithread=threads) # On Windows set multithread=FALSE
+                          multithread=nthreads) # On Windows set multithread=FALSE
 
 # some samples may have no reads pass the filter. Be aware.
 
 saveRDS(bact_ft_out,"./output/bact_filt_out.RDS")
 saveRDS(fung_ft_out,"./output/fung_filt_out.RDS")
 
+
+# reload point
+bact_ft_out <- readRDS("./output/bact_filt_out.RDS")
+fung_ft_out <- readRDS("./output/fung_filt_out.RDS")
+
+
 # quickly inspect filtration outcomes
 bact_ft_out; fung_ft_out
+
+bact_ft_out %>% colSums()
 
 fung_ft_out %>% 
   as.data.frame() %>% 

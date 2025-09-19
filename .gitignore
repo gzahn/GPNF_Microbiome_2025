@@ -5,6 +5,10 @@ data/filtn
 data/raw
 data/taxonomy
 
+# dada2 intermediate files
+output/physeq/*err*
+output/physeq/*derep*
+output/physeq/*dada*
 
 
 # History files
