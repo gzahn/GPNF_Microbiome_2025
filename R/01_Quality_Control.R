@@ -2,6 +2,8 @@
 
 # cutadapt, itsxpress, and vsearch must be installed and in your $PATH
 
+#see DOI: 10.21769/BioProtoc.4395 for pipeline information
+
 ## Packages ####
 library(readxl)
 library(tidyverse) 
