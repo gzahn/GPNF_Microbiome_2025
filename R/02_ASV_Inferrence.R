@@ -53,14 +53,14 @@ bact_errR <- learnErrors(bact_revs,
                          MAX_CONSIST = 10,
                          verbose = 1,
                          randomize = TRUE)
-saveRDS(bact_errF,"./output/physeq/bact_errR.RDS")
+saveRDS(bact_errR,"./output/physeq/bact_errR.RDS")
 
 fung_errF <- learnErrors(fung_fwds, 
                          multithread=nthreads, 
                          MAX_CONSIST = 10,
                          verbose = 1,
                          randomize = TRUE)
-saveRDS(bact_errF,"./output/physeq/fung_errF.RDS")
+saveRDS(fung_errF,"./output/physeq/fung_errF.RDS")
 
 # plot error profiles
 plotErrors(bact_errF, nominalQ=FALSE); ggsave("./output/physeq/bact_errF.png")

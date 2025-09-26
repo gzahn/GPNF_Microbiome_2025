@@ -1,11 +1,10 @@
 # SETUP ####
 
 ## packages ####
-library(tidyverse)
-library(dada2)
-library(ShortRead)
-library(Biostrings)
-library(archive)
+library(dada2, lib.loc = "/sciclone/home/gzahn/programs/R-4.5.0/library")
+library(ShortRead, lib.loc = "/sciclone/home/gzahn/programs/R-4.5.0/library")
+library(Biostrings, lib.loc = "/sciclone/home/gzahn/programs/R-4.5.0/library")
+library(archive, lib.loc = "/sciclone/home/gzahn/programs/R-4.5.0/library")
 
 # options
 options(timeout=600) # longer download timeout....change to more seconds if timing out
