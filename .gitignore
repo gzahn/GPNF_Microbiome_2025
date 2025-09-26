@@ -3,7 +3,7 @@ data/clean
 data/cutadapt
 data/filtn
 data/raw
-data/taxonomy
+data/databases
 
 # dada2 intermediate files
 output/physeq/*err*

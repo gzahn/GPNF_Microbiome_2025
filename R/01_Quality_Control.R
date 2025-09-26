@@ -161,7 +161,7 @@ run_domain(
   r2_in  = "fp_raw_rev_fung",
   r1_out = "fp_cutadapt_fwd_fung",
   r2_out = "fp_cutadapt_rev_fung",
-  FWD = fung_F, REV = fung_R,
+  FWD = fung_F, REV = fung_R,meta$fp_itsx_fwd_fung,
   lead_slack_5p = 3,
   lastN_3p = 10
 )
@@ -179,9 +179,14 @@ fung_out <- meta$fp_itsx_fwd_fung
 ###### may need to update if itsxpress not in your $PATH
 # example:
 # itsxpress_path <- "/home/gzahn/.local/bin/itsxpress"
+# note that itsxpress depends on vsearch and hmmer3
+
 itsxpress_path <- "itsxpress"
 
-
+# add directory
+if(!dir.exists("./data/cutadapt/ITS/ITSx/")){
+  dir.create("./data/cutadapt/ITS/ITSx/")
+}
 
 # run for-loop, printing commands to file and keeping log files
 for(i in seq_along(fung_in)){

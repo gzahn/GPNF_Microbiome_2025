@@ -8,7 +8,6 @@ library(phyloseq); packageVersion("phyloseq")
 library(Biostrings); packageVersion("Biostrings")
 library(readxl); packageVersion("readxl")
 
-
 ## Options ####
 set.seed(666)
 nthreads <- parallel::detectCores()-1
