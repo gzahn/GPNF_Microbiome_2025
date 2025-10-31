@@ -99,6 +99,23 @@ zymo %>%
 # dig into taxonomy for fungi... these look weird
 
 
+fung@sam_data$vigor
+
+fung@sam_data$mergevar <- paste(fung@sam_data$vigor,fung@sam_data$unit,sep="|")
+fung_m <- fung %>% 
+  merge_samples("mergevar")
+
+fung_m@sam_data$unit <- sample_names(fung_m) %>% str_split("\\|") %>% map_chr(2)
+
+
+
+fung_m %>% 
+  transform_sample_counts(ra) %>% 
+  plot_bar2(fill = "Phylum") +
+  facet_wrap(~vigor,scales="free")
+
+
+
 zymo <- 
   bact %>% 
   subset_samples(sample_names(bact) == "Zymo")
