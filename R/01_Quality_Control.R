@@ -161,7 +161,7 @@ run_domain(
   r2_in  = "fp_raw_rev_fung",
   r1_out = "fp_cutadapt_fwd_fung",
   r2_out = "fp_cutadapt_rev_fung",
-  FWD = fung_F, REV = fung_R,meta$fp_itsx_fwd_fung,
+  FWD = fung_F, REV = fung_R,
   lead_slack_5p = 3,
   lastN_3p = 10
 )
