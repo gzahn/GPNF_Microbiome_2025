@@ -46,13 +46,22 @@ bact <- phyloseq(bact_otu_table,
 
 
 # we now have phyloseq objects
+# Save raw forms:
+saveRDS(fung,"./output/physeq/fung_raw_physeq.RDS")
+saveRDS(bact,"./output/physeq/bact_raw_physeq.RDS")
+
+# import sintax version of fungal physeq
+fung_sintax <- readRDS("./output/physeq/fungal_physeq_with_sintax_taxonomy.RDS")
 
 # clean up non-fungi and suspect (NA) phyla
 fung <- 
 fung %>% 
   subset_taxa(Kingdom == "Fungi" & !is.na(Phylum))
 
-         
+fung_sintax <- 
+  fung_sintax %>% 
+  subset_taxa(Kingdom == "Fungi" & !is.na(Phylum))
+
 # clean up non-bacteria
 bact <- 
 bact %>% 
@@ -61,6 +70,10 @@ bact %>%
 
 
 fung %>% 
+  transform_sample_counts(ra) %>% 
+  plot_bar2(fill="Phylum")
+
+fung_sintax %>% 
   transform_sample_counts(ra) %>% 
   plot_bar2(fill="Phylum")
 
@@ -75,6 +88,13 @@ fung@sam_data %>%
                 -notes,-contains("filename"),-contains("sra")) %>% 
   sample_data()
 
+fung_sintax@sam_data <- 
+  fung_sintax@sam_data %>% 
+  as("data.frame") %>% 
+  dplyr::select(-contains("fp_"), -starts_with("env_"), -starts_with("library_"),
+                -notes,-contains("filename"),-contains("sra")) %>% 
+  sample_data()
+
 bact@sam_data <- 
   bact@sam_data %>% 
   as("data.frame") %>% 
@@ -82,12 +102,19 @@ bact@sam_data <-
                 -notes,-contains("filename"),-contains("sra")) %>% 
   sample_data()
 
+# save cleaned up forms
+saveRDS(fung,"./output/physeq/fung_clean_physeq.RDS")
+saveRDS(fung_sintax,"./output/physeq/fung_sintax_clean_physeq.RDS")
+saveRDS(bact,"./output/physeq/bact_clean_physeq.RDS")
+
 
 # check positive controls
 
 zymo <- 
 fung %>% 
   subset_samples(sample_names(fung) == "Zymo")
+zymo@tax_table[1,]
+
 
 zymo %>% 
   subset_taxa(taxa_sums(zymo) > 0) %>% 
@@ -123,6 +150,7 @@ zymo <-
 zymo %>% 
   subset_taxa(taxa_sums(zymo) > 0) %>% 
   plot_bar2(fill = "Order")
+
 zymo %>% 
   subset_taxa(taxa_sums(zymo) > 0) %>% 
   otu_table() %>% 
